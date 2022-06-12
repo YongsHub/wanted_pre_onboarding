@@ -1,2 +1,1 @@
-# wanted_pre_onboarding
-사전과제
+# 원티드 백엔드 코스 사전 과제
