@@ -36,4 +36,11 @@ export class JobAdvertisementController {
     ): Promise<GlobalDto[]>{
         return this.postingService.getAllAdvertisement();
     }
+
+    @Get('/advertisement') // ?search=키워드 로 검색결과 가져오기
+    searchAll(
+        @Query('search') search: string,
+    ): Promise<GlobalDto[]>{
+        return this.postingService.searchAll(search);
+    }
 }
