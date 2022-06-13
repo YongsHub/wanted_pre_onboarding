@@ -56,4 +56,25 @@ export class JobAdvertisementService {
             }));
         }
     }
+
+
+    async delete(id: number): Promise<{statusCode: number, message: string}>{
+        const result = await this.boardRepository
+                                     .createQueryBuilder()
+                                     .delete()
+                                     .from(Board)
+                                     .where("id = :id", {id: id})
+                                     .execute()
+        if(!result.affected){
+            throw new NotFoundException({
+                "statusCode": 404,
+                "message": "id를 찾을 수 없습니다."
+            })
+        }else{
+            return Object.assign({
+                "statusCode": 200,
+                "message": "채용공고가 정상적으로 삭제되었습니다."
+            })
+        }
+    }
 }
