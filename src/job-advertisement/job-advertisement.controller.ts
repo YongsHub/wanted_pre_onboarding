@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { Board } from 'src/entities/board.entity';
 import { CreateBoardDto } from './dto/board.dto';
 import { JobAdvertisementService } from './job-advertisement.service';
@@ -21,5 +21,12 @@ export class JobAdvertisementController {
         @Body() createBoardDto: CreateBoardDto,
     ): Promise<Board>{
         return this.postingService.update(id, createBoardDto);
+    }
+
+    @Delete('/:id') // 채용공고 삭제
+    deleteAdvertisement(
+        @Param('id', ParseIntPipe) id: number,
+    ): Promise<{statusCode: number, message: string}>{
+        return this.postingService.delete(id);
     }
 }
