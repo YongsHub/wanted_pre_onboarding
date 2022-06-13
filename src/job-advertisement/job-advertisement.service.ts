@@ -4,6 +4,7 @@ import { Board } from 'src/entities/board.entity';
 import { Company } from 'src/entities/company.entity';
 import { Repository } from 'typeorm';
 import { CreateBoardDto } from './dto/board.dto';
+import { GlobalDto } from './dto/global.dto';
 
 @Injectable()
 export class JobAdvertisementService {
@@ -60,11 +61,11 @@ export class JobAdvertisementService {
 
     async delete(id: number): Promise<{statusCode: number, message: string}>{
         const result = await this.boardRepository
-                                     .createQueryBuilder()
-                                     .delete()
-                                     .from(Board)
-                                     .where("id = :id", {id: id})
-                                     .execute()
+                                    .createQueryBuilder()
+                                    .delete()
+                                    .from(Board)
+                                    .where("id = :id", {id: id})
+                                    .execute()
         if(!result.affected){
             throw new NotFoundException({
                 "statusCode": 404,
@@ -75,6 +76,31 @@ export class JobAdvertisementService {
                 "statusCode": 200,
                 "message": "채용공고가 정상적으로 삭제되었습니다."
             })
+        }
+    }
+
+    async getAllAdvertisement(): Promise<GlobalDto[]>{
+        try{
+            const boards = await this.boardRepository.createQueryBuilder("board")
+            .leftJoinAndSelect("board.company", "company")
+            .getMany()
+        
+
+            const result: GlobalDto[] = [];
+            boards.forEach((board) => { // 형식대로 맞추기
+                result.push({
+                    "id": board.id,
+                    "name": board.company.name,
+                    "country": board.company.country,
+                    "location": board.company.location,
+                    "position": board.position, 
+                    "reward": board.reward,
+                    "stack": board.stack,
+                })
+            })
+            return result;
+        }catch(error){
+            throw new NotFoundException();
         }
     }
 }

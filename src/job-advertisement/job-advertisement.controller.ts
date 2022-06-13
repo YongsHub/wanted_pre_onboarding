@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { Board } from 'src/entities/board.entity';
 import { CreateBoardDto } from './dto/board.dto';
+import { GlobalDto } from './dto/global.dto';
 import { JobAdvertisementService } from './job-advertisement.service';
 
 @Controller('job-advertisement')
@@ -28,5 +29,11 @@ export class JobAdvertisementController {
         @Param('id', ParseIntPipe) id: number,
     ): Promise<{statusCode: number, message: string}>{
         return this.postingService.delete(id);
+    }
+
+    @Get() // 채용공고 목록 가져오기
+    getAllAdvertisement(
+    ): Promise<GlobalDto[]>{
+        return this.postingService.getAllAdvertisement();
     }
 }
