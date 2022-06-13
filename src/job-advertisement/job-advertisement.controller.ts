@@ -33,14 +33,21 @@ export class JobAdvertisementController {
 
     @Get() // 채용공고 목록 가져오기
     getAllAdvertisement(
-    ): Promise<GlobalDto[]>{
+    ): Promise<any>{
         return this.postingService.getAllAdvertisement();
     }
 
     @Get('/advertisement') // ?search=키워드 로 검색결과 가져오기
     searchAll(
         @Query('search') search: string,
-    ): Promise<GlobalDto[]>{
+    ): Promise<any>{
         return this.postingService.searchAll(search);
+    }
+
+    @Get('/advertisement/:id') // 채용 상세 페이지 가져오기
+    getDetailAdvertisement(
+        @Param('id', ParseIntPipe) id: number,
+    ): Promise<any>{
+        return this.postingService.getDetailAdvertisement(id);
     }
 }

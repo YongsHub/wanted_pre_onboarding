@@ -16,6 +16,20 @@ export class JobAdvertisementService {
         private companyRepository: Repository<Company>,
     ){}
 
+    setGlobalDto(board: Board): GlobalDto{
+        const result: GlobalDto = {
+            "id": board.id,
+            "name": board.company.name,
+            "country": board.company.country,
+            "location": board.company.location,
+            "position": board.position, 
+            "reward": board.reward,
+            "description": board.description,
+            "stack": board.stack,
+        };
+        return result;
+    }
+
     async create(id: number, createBoardDto: CreateBoardDto): Promise<{statusCode: number, company_id:number, position: string, reward: string, description: string, stack: string}> {
         const board = this.boardRepository.create(createBoardDto);
         try{
@@ -68,11 +82,11 @@ export class JobAdvertisementService {
 
     async delete(id: number): Promise<{statusCode: number, message: string}>{
         const result = await this.boardRepository
-                                    .createQueryBuilder()
-                                    .delete()
-                                    .from(Board)
-                                    .where("id = :id", {id: id})
-                                    .execute()
+        .createQueryBuilder()
+        .delete()
+        .from(Board)
+        .where("id = :id", {id: id})
+        .execute()
         if(!result.affected){
             throw new NotFoundException({
                 "statusCode": 404,
@@ -86,7 +100,8 @@ export class JobAdvertisementService {
         }
     }
 
-    async getAllAdvertisement(): Promise<GlobalDto[]>{
+
+    async getAllAdvertisement(): Promise<any>{
         try{
             const boards = await this.boardRepository.createQueryBuilder("board")
             .leftJoinAndSelect("board.company", "company")
@@ -98,17 +113,11 @@ export class JobAdvertisementService {
                     "message": "채용 공고 목록이 없습니다."
                 }));
             }
-            const result: GlobalDto[] = [];
+            const result = [];
             boards.forEach((board) => { // 형식대로 맞추기
-                result.push({
-                    "id": board.id,
-                    "name": board.company.name,
-                    "country": board.company.country,
-                    "location": board.company.location,
-                    "position": board.position, 
-                    "reward": board.reward,
-                    "stack": board.stack,
-                })
+                const globalDto = this.setGlobalDto(board);
+                delete globalDto.description;
+                result.push(globalDto);
             })
             return result;
         }catch(NotFoundException){
@@ -116,10 +125,11 @@ export class JobAdvertisementService {
         }
     }
 
-    async searchAll(search: string): Promise<GlobalDto[]>{
+
+    async searchAll(search: string): Promise<any>{
         try{
             const boards = await this.getAllAdvertisement(); // 전체 공고 목록 가져오기
-            const result = boards.filter((board) => {
+            const result = boards.filter((board: any) => {
                 if(board.name.indexOf(search) > -1){
                     return board;
                 }else if(board.country.indexOf(search) > -1){
@@ -142,6 +152,32 @@ export class JobAdvertisementService {
             }else{
                 return result;
             }
+        }catch(NotFoundException){
+            throw NotFoundException;
+        }
+    }
+
+
+    async getDetailAdvertisement(id: number): Promise<any>{
+        try{
+            const board = await this.boardRepository.findOne({where: {id}, relations: ["company"]});
+            if(board === null) throw new NotFoundException({
+                "statusCode": 404,
+                "message": "존재하지 않는 채용공고 id입니다."
+            })
+            const result = this.setGlobalDto(board);
+            const companyId: number = board.company.id;
+            const otherAd = []
+            const boards = await this.boardRepository.createQueryBuilder("board")
+            .select("id")
+            .where("board.company.id = :id", {id: companyId})
+            .getRawMany()
+            
+            boards.forEach((board) => { // Parameter로 들어온 id를 제외한 회사의 다른 채용 공고 id
+                if(board.id !== id) otherAd.push(board.id);
+            })
+            result['otherAd'] = otherAd;
+            return result;
         }catch(NotFoundException){
             throw NotFoundException;
         }
