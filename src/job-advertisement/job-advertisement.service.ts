@@ -36,4 +36,24 @@ export class JobAdvertisementService {
             }));
         }
     }
+
+
+    async update(id: number, createBoardDto: CreateBoardDto): Promise<Board>{
+        try{
+            const board = await this.boardRepository.findOne({where:{id}});
+            console.log(board);
+            board.position = createBoardDto.position;
+            board.reward = createBoardDto.reward;
+            board.description = createBoardDto.description;
+            board.stack = createBoardDto.stack;
+
+            await this.boardRepository.save(board);
+            return board;
+        }catch(error){
+            throw new NotFoundException(Object.assign({
+                "statusCode": 404,
+                "message": "채용 id를 찾을 수 없습니다."
+            }));
+        }
+    }
 }
