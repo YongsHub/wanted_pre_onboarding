@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Board } from 'src/entities/board.entity';
 import { Company } from 'src/entities/company.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { CreateBoardDto } from './dto/board.dto';
 import { GlobalDto } from './dto/global.dto';
 
@@ -20,6 +20,12 @@ export class JobAdvertisementService {
         const board = this.boardRepository.create(createBoardDto);
         try{
             const company: Company = await this.companyRepository.findOne({where:{id}, relations:["boards"]});
+            if(company === null){
+                throw new NotFoundException(Object.assign({
+                    "statusCode": 404,
+                    "message": "회사 id를 찾을 수 없습니다."
+                }));
+            }
             company.boards.push(board);
             await this.companyRepository.save(company);
             return Object.assign({
@@ -30,11 +36,8 @@ export class JobAdvertisementService {
                 "description": board.description,
                 "stack": board.stack,
             });
-        }catch(error){
-            throw new NotFoundException(Object.assign({
-                "statusCode": 404,
-                "message": "회사 id를 찾을 수 없습니다."
-            }));
+        }catch(NotFoundException){
+            throw NotFoundException;
         }
     }
 
@@ -42,7 +45,14 @@ export class JobAdvertisementService {
     async update(id: number, createBoardDto: CreateBoardDto): Promise<Board>{
         try{
             const board = await this.boardRepository.findOne({where:{id}});
-            console.log(board);
+            
+            if(board === null){
+                throw new NotFoundException(Object.assign({
+                    "statusCode": 404,
+                    "message": "채용 id를 찾을 수 없습니다."
+                }));
+            }
+            
             board.position = createBoardDto.position;
             board.reward = createBoardDto.reward;
             board.description = createBoardDto.description;
@@ -50,11 +60,8 @@ export class JobAdvertisementService {
 
             await this.boardRepository.save(board);
             return board;
-        }catch(error){
-            throw new NotFoundException(Object.assign({
-                "statusCode": 404,
-                "message": "채용 id를 찾을 수 없습니다."
-            }));
+        }catch(NotFoundException){
+            throw NotFoundException;
         }
     }
 
@@ -85,7 +92,12 @@ export class JobAdvertisementService {
             .leftJoinAndSelect("board.company", "company")
             .getMany()
         
-
+            if(boards === null){
+                throw new NotFoundException(Object.assign({
+                    "statusCode": 404,
+                    "message": "채용 공고 목록이 없습니다."
+                }));
+            }
             const result: GlobalDto[] = [];
             boards.forEach((board) => { // 형식대로 맞추기
                 result.push({
@@ -99,8 +111,39 @@ export class JobAdvertisementService {
                 })
             })
             return result;
-        }catch(error){
-            throw new NotFoundException();
+        }catch(NotFoundException){
+            throw NotFoundException;
+        }
+    }
+
+    async searchAll(search: string): Promise<GlobalDto[]>{
+        try{
+            const boards = await this.getAllAdvertisement(); // 전체 공고 목록 가져오기
+            const result = boards.filter((board) => {
+                if(board.name.indexOf(search) > -1){
+                    return board;
+                }else if(board.country.indexOf(search) > -1){
+                    return board;
+                }else if(board.location.indexOf(search) > -1){
+                    return board;
+                }else if(board.position.indexOf(search) > -1){
+                    return board;
+                }else if(board.stack.indexOf(search) > -1){
+                    return board;   //태용 바보
+                }else{
+                    return null;
+                }
+            })
+            if(result.length === 0){
+                throw new NotFoundException(Object.assign({
+                    "statusCode": 404,
+                    "message": "검색 키워드에 관한 채용목록이 없습니다."
+                }));
+            }else{
+                return result;
+            }
+        }catch(NotFoundException){
+            throw NotFoundException;
         }
     }
 }
