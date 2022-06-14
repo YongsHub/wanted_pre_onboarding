@@ -35,25 +35,25 @@ export class JobAdvertisementService {
         return result;
     }
 
-    async create(id: number, createBoardDto: CreateBoardDto): Promise<{statusCode: number, company_id:number, position: string, reward: string, description: string, stack: string}> {
+    async createAdvertisement(createBoardDto: CreateBoardDto): Promise<any> {
+        const id = createBoardDto.id; // 회사 id
+        delete createBoardDto['id'];
         const board = this.boardRepository.create(createBoardDto);
         try{
             const company: Company = await this.companyRepository.findOne({where:{id}, relations:["boards"]});
-            if(company === null){
+            if(company === null){ // 존재하지 않는 회사의 id라면
                 throw new NotFoundException(Object.assign({
-                    "statusCode": 404,
-                    "message": "회사 id를 찾을 수 없습니다."
+                    statusCode: 404,
+                    message: "회사 id를 찾을 수 없습니다."
                 }));
             }
-            company.boards.push(board);
+            company.boards.push(board); // 회사와 채용 공고 1:N
             await this.companyRepository.save(company);
+            
             return Object.assign({
-                "statusCode": 201,
-                "company_id": company.id,
-                "position": board.position,
-                "reward": board.reward,
-                "description": board.description,
-                "stack": board.stack,
+                data: createBoardDto,
+                statusCode: 201,
+                message: "채용공고 등록 성공",
             });
         }catch(NotFoundException){
             throw NotFoundException;
@@ -61,31 +61,37 @@ export class JobAdvertisementService {
     }
 
 
-    async update(id: number, createBoardDto: CreateBoardDto): Promise<Board>{
+    async updateAdvertisement(createBoardDto: CreateBoardDto): Promise<any>{
         try{
+            const id = createBoardDto.id; // 채용 공고 게시물 id
             const board = await this.boardRepository.findOne({where:{id}});
             
             if(board === null){
                 throw new NotFoundException(Object.assign({
-                    "statusCode": 404,
-                    "message": "채용 id를 찾을 수 없습니다."
+                    statusCode: 404,
+                    message: "채용 id를 찾을 수 없습니다."
                 }));
             }
-            
-            board.position = createBoardDto.position;
-            board.reward = createBoardDto.reward;
-            board.description = createBoardDto.description;
-            board.stack = createBoardDto.stack;
+
+            board.position = createBoardDto.position ? createBoardDto.position : board.position;
+            board.reward = createBoardDto.reward ? createBoardDto.reward : board.reward;
+            board.description = createBoardDto.description ? createBoardDto.description : board.description;
+            board.stack = createBoardDto.stack ? createBoardDto.stack : board.stack;
 
             await this.boardRepository.save(board);
-            return board;
+            return Object.assign({
+                data: board,
+                statusCode: 200,
+                message: "업데이트 성공"
+            });
         }catch(NotFoundException){
             throw NotFoundException;
         }
     }
 
 
-    async delete(id: number): Promise<{statusCode: number, message: string}>{
+    async delete(id: number): Promise<any>{
+        const board = await this.boardRepository.findOne({where: {id}});
         const result = await this.boardRepository
         .createQueryBuilder()
         .delete()
@@ -94,13 +100,14 @@ export class JobAdvertisementService {
         .execute()
         if(!result.affected){
             throw new NotFoundException({
-                "statusCode": 404,
-                "message": "id를 찾을 수 없습니다."
+                statusCode: 404,
+                message: "id를 찾을 수 없습니다."
             })
         }else{
             return Object.assign({
-                "statusCode": 200,
-                "message": "채용공고가 정상적으로 삭제되었습니다."
+                data: board,
+                statusCode: 200,
+                message: "채용공고가 정상적으로 삭제되었습니다."
             })
         }
     }
@@ -114,8 +121,8 @@ export class JobAdvertisementService {
         
             if(boards === null){
                 throw new NotFoundException(Object.assign({
-                    "statusCode": 404,
-                    "message": "채용 공고 목록이 없습니다."
+                    statusCode: 404,
+                    message: "채용 공고 목록이 없습니다."
                 }));
             }
             const result = [];
@@ -124,7 +131,12 @@ export class JobAdvertisementService {
                 delete globalDto.description;
                 result.push(globalDto);
             })
-            return result;
+            result
+            return Object.assign({
+                data: result,
+                statusCode: 200,
+                message: "채용 공고 리스트 가져오기 성공"
+            });
         }catch(NotFoundException){
             throw NotFoundException;
         }
@@ -134,7 +146,7 @@ export class JobAdvertisementService {
     async searchAll(search: string): Promise<any>{
         try{
             const boards = await this.getAllAdvertisement(); // 전체 공고 목록 가져오기
-            const result = boards.filter((board: any) => {
+            const result = boards.data.filter((board: any) => {
                 if(board.name.indexOf(search) > -1){
                     return board;
                 }else if(board.country.indexOf(search) > -1){
@@ -144,7 +156,7 @@ export class JobAdvertisementService {
                 }else if(board.position.indexOf(search) > -1){
                     return board;
                 }else if(board.stack.indexOf(search) > -1){
-                    return board;   //태용 바보
+                    return board;
                 }else{
                     return null;
                 }
@@ -155,7 +167,11 @@ export class JobAdvertisementService {
                     "message": "검색 키워드에 관한 채용목록이 없습니다."
                 }));
             }else{
-                return result;
+                return Object.assign({
+                    data: result,
+                    statusCode: 200,
+                    message: "검색 키워드로 관련 채용 공고 리스트 가져오기 성공"
+                });
             }
         }catch(NotFoundException){
             throw NotFoundException;
