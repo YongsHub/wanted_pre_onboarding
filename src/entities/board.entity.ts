@@ -1,5 +1,6 @@
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Company } from "./company.entity";
+import { User } from "./user.entity";
 
 @Entity()
 export class Board extends BaseEntity {
@@ -20,4 +21,7 @@ export class Board extends BaseEntity {
 
     @ManyToOne(()=> Company, (company) => company.boards)
     company: Company
+
+    @OneToMany(() => User, (user) => user.board, {cascade: ['insert', 'update']})
+    users: User[]
 }

@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { Board } from 'src/entities/board.entity';
+import { ApplyDto } from './dto/apply.dto';
 import { CreateBoardDto } from './dto/board.dto';
 import { GlobalDto } from './dto/global.dto';
 import { JobAdvertisementService } from './job-advertisement.service';
@@ -50,4 +51,12 @@ export class JobAdvertisementController {
     ): Promise<any>{
         return this.postingService.getDetailAdvertisement(id);
     }
+
+    @Post('/user/advertisement') // 사용자의 채용 공고에 지원
+    userApplyAdvertisement(
+        @Body() applyDto: ApplyDto
+    ){
+        return this.postingService.userApplyAdvertisement(applyDto);
+    }
+
 }
