@@ -9,26 +9,24 @@ import { JobAdvertisementService } from './job-advertisement.service';
 export class JobAdvertisementController {
     constructor(private postingService:JobAdvertisementService){}
     
-    @Patch('/advertisement/:id') //회사에 채용공고 등록
+    @Post('/advertisement') //회사에 채용공고 등록
     createAdvertisement(
-        @Param('id', ParseIntPipe) id: number, // 회사 id
-        @Body() createBoardDto: CreateBoardDto // 채용공고 DTO
-    ): Promise<{company_id:number, position: string, reward: string, description: string, stack: string}> {
-        return this.postingService.create(id, createBoardDto);
+        @Body() createBoardDto: CreateBoardDto // 회사id를 포함한 Dto
+    ): Promise<any> {
+        return this.postingService.createAdvertisement(createBoardDto);
     }
 
-    @Patch('/:id') // 회사 id를 제외한 내용 수정
+    @Patch('/advertisement') // 회사 id를 제외한 채용공고 수정
     updateAdvertisement(
-        @Param('id', ParseIntPipe) id: number,
         @Body() createBoardDto: CreateBoardDto,
-    ): Promise<Board>{
-        return this.postingService.update(id, createBoardDto);
+    ): Promise<any>{
+        return this.postingService.updateAdvertisement(createBoardDto);
     }
 
     @Delete('/:id') // 채용공고 삭제
     deleteAdvertisement(
         @Param('id', ParseIntPipe) id: number,
-    ): Promise<{statusCode: number, message: string}>{
+    ): Promise<any>{
         return this.postingService.delete(id);
     }
 
@@ -55,7 +53,7 @@ export class JobAdvertisementController {
     @Post('/user/advertisement') // 사용자의 채용 공고에 지원
     userApplyAdvertisement(
         @Body() applyDto: ApplyDto
-    ){
+    ): Promise<any>{
         return this.postingService.userApplyAdvertisement(applyDto);
     }
 
