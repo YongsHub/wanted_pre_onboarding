@@ -69,7 +69,7 @@ export class JobAdvertisementService {
             if(board === null){
                 throw new NotFoundException(Object.assign({
                     statusCode: 404,
-                    message: "채용 id를 찾을 수 없습니다."
+                    message: "채용 공고 id를 찾을 수 없습니다."
                 }));
             }
 
@@ -198,7 +198,11 @@ export class JobAdvertisementService {
                 if(board.id !== id) otherAd.push(board.id);
             })
             result['otherAd'] = otherAd;
-            return result;
+            return Object.assign({
+                data: result,
+                statusCode: 200,
+                message: "채용 상세 페이지 가져오기 성공"
+            });
         }catch(NotFoundException){
             throw NotFoundException;
         }
