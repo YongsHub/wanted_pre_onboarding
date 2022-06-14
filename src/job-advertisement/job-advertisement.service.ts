@@ -1,8 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Board } from 'src/entities/board.entity';
 import { Company } from 'src/entities/company.entity';
+import { User } from 'src/entities/user.entity';
 import { Not, Repository } from 'typeorm';
+import { ApplyDto } from './dto/apply.dto';
 import { CreateBoardDto } from './dto/board.dto';
 import { GlobalDto } from './dto/global.dto';
 
@@ -14,6 +16,9 @@ export class JobAdvertisementService {
 
         @InjectRepository(Company)
         private companyRepository: Repository<Company>,
+
+        @InjectRepository(User)
+        private userRepository: Repository<User>
     ){}
 
     setGlobalDto(board: Board): GlobalDto{
@@ -180,6 +185,38 @@ export class JobAdvertisementService {
             return result;
         }catch(NotFoundException){
             throw NotFoundException;
+        }
+    }
+
+
+    async userApplyAdvertisement(applyDto: ApplyDto) {
+        let id: number;
+        try{
+            id = applyDto.board_id;
+            const board = await this.boardRepository.findOne({where: {id}});
+            id = applyDto.user_id;
+            const user = await this.userRepository.findOne({where: {id}, relations: ["board"]});
+            if(user === null || board === null){
+                throw new NotFoundException(Object.assign({
+                    "statusCode":404,
+                    "message": "잘못된 user_id or 잘못된 board_id입니다."
+                }))
+            }else if(user.board !== null){
+                throw new BadRequestException(Object.assign({
+                    "statusCode": 400,
+                    "message": "user는 이미 채용 공고에 지원하였습니다."
+                }))
+            }else{
+                user.board = board;
+                await this.userRepository.save(user);
+                return Object.assign({
+                    "statusCode": 200,
+                    "message": "사용자가 성공적으로 채용 공고에 지원하였습니다."
+                })
+            }
+        }catch(error){
+            console.log(error);
+            throw error.response;
         }
     }
 }
