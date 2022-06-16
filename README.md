@@ -8,7 +8,7 @@ API 명세서
 http://localhost:3000/api/#/
 ```
 
-## 📌 Git Convetion
+## 📌 Git Convention
 
 - 🐛 : hotfix, Bug
 - ✨ : Feature
